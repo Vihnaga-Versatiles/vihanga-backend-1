@@ -1,0 +1,8 @@
+node_modules/
+.vercel
+db/
+# local env (contains secrets)
+.env
+
+# Google service account credentials
+public/cred.json

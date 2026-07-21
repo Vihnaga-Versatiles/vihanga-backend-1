@@ -1,0 +1,96 @@
+{
+	"info": {
+		"_postman_id": "1ef7efd6-92c8-449e-b03a-88bafd71d6ae",
+		"name": "TS Designations",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Designations",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/designations/getDesignations",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"designations",
+						"getDesignations"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Designation",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"designationName\":\"sample1\",\r\n  \"departmentName\": \"departmen1\",\r\n  \"departmentId\":\"1\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/api/designations/createDesignation",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"designations",
+						"createDesignation"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Designation",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Designation",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Get Company By Id",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Create or Update Multiple Designations",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Designations",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}

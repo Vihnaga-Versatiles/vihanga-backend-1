@@ -1,0 +1,22 @@
+<body style="font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;">
+  <div
+    style="border:2px solid #2A7A7B;padding:20px;margin:10px;border-top:50px solid #2A7A7B;border-bottom:50px solid #2A7A7B">
+    <h1>
+      <%= subject %>
+    </h1>
+    <p>
+      Message: <%- message %>.
+    </p>
+    <p>
+      <a
+        href="https://talent-spotify-frontend-git-ollaa-company-talentspotify.vercel.app/admin/objectives/okr-details/<%=_id%>">View
+        Details</a>
+    </p>
+    <p>
+      <% if(attachment){%>
+        <a href="<%=attachment%>" target="_blank">View Attachment</a>
+        <%}%>
+    </p>
+    </p>
+  </div>
+</body>

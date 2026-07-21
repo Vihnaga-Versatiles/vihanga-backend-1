@@ -1,0 +1,10 @@
+const rewards = [
+  { "rewardStatus": "active", "rewardIcon": "https://res.cloudinary.com/dbqm9svvp/raw/upload/v1663062091/xvjl6xx5x17vxpasmpfr.png", "rewardName": "Amazon", "rewardCode": "Amazon123", "rewardDescription": "Amazon Gift Voucher", "rewardType": "Amazon", "rewardApprover": "HR Admin", "rewardPoints": 5, "rewardAmount": 2000 },
+  { "rewardStatus": "active", "rewardIcon": "https://res.cloudinary.com/dbqm9svvp/raw/upload/v1663065319/cadtmvmfa6mxqprw2uxw.png", "rewardName": "Book My show", "rewardCode": "BookMyShow", "rewardDescription": "Book My Show Gift Voucher", "rewardType": "Book My Show", "rewardApprover": "HR Admin", "rewardPoints": 6, "rewardAmount": 1500 },
+  { "rewardStatus": "active", "rewardIcon": "https://res.cloudinary.com/dbqm9svvp/raw/upload/v1663062901/f6th7xoioycxx5hj3g9d.png", "rewardName": "Big Basket", "rewardCode": "bb", "rewardDescription": "Big Basket gift voucher", "rewardType": "Big Basket", "rewardApprover": "HR Admin", "rewardPoints": 4, "rewardAmount": 1000 },
+  { "rewardStatus": "active", "rewardIcon": "https://res.cloudinary.com/dbqm9svvp/raw/upload/v1663063362/upxf9yktvg1vj6debjty.png", "rewardName": "FlipKart", "rewardCode": "Flipkart", "rewardDescription": "Flip Kart Gift voucher", "rewardType": "Flipkart", "rewardApprover": "HR Admin", "rewardPoints": 7, "rewardAmount": 2000 },
+  { "rewardStatus": "active", "rewardIcon": "https://res.cloudinary.com/dbqm9svvp/raw/upload/v1663063861/wfkttflqmg3jjrri4nh6.png", "rewardName": "Netflix", "rewardCode": "Netflix", "rewardDescription": "Netflix Subscription", "rewardType": "Netflix Subscription", "rewardApprover": "HR Admin", "rewardPoints": 8, "rewardAmount": 2000 },
+  { "rewardStatus": "active", "rewardIcon": "https://res.cloudinary.com/dbqm9svvp/raw/upload/v1663065124/gaajjdfwdh5hrusom8of.jpeg", "rewardName": "Leave Credits", "rewardCode": "Leave credits", "rewardDescription": "Leave Credits", "rewardType": "Leave Credits", "rewardApprover": "Manager", "rewardPoints": 9, "rewardAmount": 0 }
+];
+
+module.exports = rewards;

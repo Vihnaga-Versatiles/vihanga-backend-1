@@ -1,0 +1,20 @@
+<body style="font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;">
+  <div
+    style="border:2px solid #2A7A7B;padding:20px;margin:10px;text-align:justify;border-top:50px solid #2A7A7B;border-bottom:50px solid #2A7A7B">
+    <% if (typeof logoUrl !== 'undefined' && logoUrl) { %>
+      <div style="text-align:center;margin-bottom:10px;">
+        <img src="<%= logoUrl %>" alt="Logo" style="max-height:50px;" />
+      </div>
+    <% } %>
+    <h1 style="text-align: center;">New Career Request</h1>
+    <p>Name: <%= user.name %>,</p>
+    <p>Linkedin URL:<a href="<%= user.linkedinURL %>">
+        <%= user.linkedinURL %>,</p>
+    <p>Phone: <%= user.phone %>,</p>
+    <p>Email: <%= user.email %>,</p>
+    <p>CV URL: <a href="<%= user.cvURL %>">
+        <%= user.cvURL %>
+      </a>,</p>
+    </p>
+  </div>
+</body>

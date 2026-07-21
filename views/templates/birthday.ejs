@@ -1,0 +1,117 @@
+<%
+  const wishType =
+    user.type && user.type.toLowerCase() === 'birthday'
+      ? 'Birthday'
+      : 'Anniversary';
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= wishType %> Wishes - Talent Spotify</title>
+    <style>
+        body {
+            font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #2A7A7B 0%, #1a5a5b 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .content {
+            padding: 30px;
+            text-align: center;
+        }
+        .wish-text {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .emoji {
+            font-size: 48px;
+            margin: 20px 0;
+        }
+        .sender {
+            margin-top: 8px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <% if (typeof logoUrl !== 'undefined' && logoUrl) { %>
+                <img src="<%= logoUrl %>" alt="Logo" style="max-height:56px;margin-bottom:8px;" />
+            <% } %>
+            <div class="logo"><%= user.legalEntity %></div>
+            <h1><%= wishType %> Wishes</h1>
+            <% if (user.senderName) { %>
+                <div class="sender">From: <%= user.senderName %></div>
+            <% } %>
+        </div>
+        
+        <div class="content">
+            <div class="emoji">
+                <%= wishType === 'Birthday' ? '🎂🎉' : '🎊🎉' %>
+            </div>
+            
+            <h2>Dear <%= user.recipientName || user.name %>,</h2>
+            
+            <div class="wish-text">
+                 <% if (wishType === 'Birthday') { %>
+                    Happy birthday 🎉
+                <% } else { %>
+                    Happy anniversary 🎊
+                <% } %>
+            </div>
+            
+            <div class="wish-text">
+                <% if (wishType === 'Birthday') { %>
+                    May your special day be filled with joy, laughter, and wonderful memories. 
+                    Here's to another amazing year ahead!
+                <% } else { %>
+                    Congratulations on this special milestone! 
+                    May your journey continue to be filled with success and happiness.
+                <% } %>
+            </div>
+            
+            <div class="wish-text">
+                Best regards,<br>
+                <%= user.senderName ? user.senderName + ' — ' : '' %><%= user.legalEntity %>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message from Vihanga</p>
+            <p>© 2024 Vihanga. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

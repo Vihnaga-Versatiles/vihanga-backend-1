@@ -1,0 +1,41 @@
+{
+  "name": "talent-spotify-backend",
+  "version": "1.0.1",
+  "description": "Talent Spotify Backend Using Nodejs, Express, MongoDB",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [
+    "nodejs",
+    "backend",
+    "express",
+    "mongodb"
+  ],
+  "author": "AppsDreamz Pvt Ltd.,",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1692.0",
+    "axios": "^1.7.7",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "ejs": "^3.1.6",
+    "express": "^4.17.1",
+    "googleapis": "^129.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "moment": "^2.29.4",
+    "mongoose": "^5.12.7",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.7.3",
+    "nodemailer-sendgrid-transport": "^0.2.0",
+    "swagger-autogen": "^2.18.8",
+    "swagger-ui-express": "^4.3.0",
+    "talent-spotify-backend": "file:",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}
