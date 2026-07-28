@@ -1,13 +1,9 @@
-const { OAuth2Client } = require("google-auth-library");
 const jwt = require("jsonwebtoken");
 const PsychometricUser = require("../../models/psychometric/PsychometricUserModel");
 const { sendEmail } = require("../../middlewares/recruitment/sendMail");
-const {
-  JWT_SECRET,
-  GOOGLE_CLIENT_ID,
-} = require("../../config/environment");
+const { JWT_SECRET } = require("../../config/environment");
 
-const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+const inviteJwtSecret = () => process.env.JWT_SECRET || JWT_SECRET;
 
 const successResponse = (res, statusCode, message, data = {}) => {
   res.status(statusCode).json({
@@ -15,6 +11,16 @@ const successResponse = (res, statusCode, message, data = {}) => {
     message,
     data,
   });
+};
+
+const isAssessmentCompleted = (user) => {
+  if (!user) return false;
+  if (user.assessmentCompleted) return true;
+  const results = user.results;
+  if (!results || typeof results !== "object") return false;
+  return Object.values(results).some(
+    (value) => typeof value === "number" && value > 0
+  );
 };
 
 // Email template sent to HR when a candidate submits the assessment
@@ -70,52 +76,84 @@ const createUser = async (req, res) => {
   }
 };
 
-// @desc  Login/register a candidate via Google
-// @route POST /api/psychometric/google-login
-const loginGoogleUser = async (req, res) => {
+// @desc  Authenticate candidate via invite link (token + email + candidateId)
+// @route POST /api/psychometric/invite-login
+const inviteLogin = async (req, res) => {
   try {
-    const { token } = req.body;
+    const { token, email, candidateId } = req.body;
 
-    if (!token) {
-      return res.status(400).json({ error: "Token is required" });
-    }
-
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: GOOGLE_CLIENT_ID,
-    });
-
-    const { email, name } = ticket.getPayload();
-
-    if (!email) {
-      return res
-        .status(400)
-        .json({ error: "Email not found in Google token" });
-    }
-
-    let user = await PsychometricUser.findOne({ email });
-
-    if (user) {
-      return res.status(200).json({
-        message: "User already exists",
-        token: jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1d" }),
-        user: { email: user.email, name: user.name },
+    if (!token || !email || !candidateId) {
+      return res.status(400).json({
+        error: "token, email, and candidateId are required",
       });
     }
 
-    user = await PsychometricUser.create({ email, name });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, inviteJwtSecret());
+    } catch (err) {
+      const message =
+        err.name === "TokenExpiredError"
+          ? "This test link has expired. Please ask HR to resend the invitation."
+          : "This test link is invalid. Please use the link from your email.";
+      return res.status(401).json({ error: message });
+    }
 
-    const jwtToken = jwt.sign({ id: user._id }, JWT_SECRET, {
-      expiresIn: "1d",
+    const tokenEmail = decoded?.email?.toLowerCase?.()?.trim?.();
+    const requestEmail = email.toLowerCase().trim();
+    const tokenCandidateId = String(decoded?.candidateId || "");
+    const requestCandidateId = String(candidateId);
+
+    if (
+      !tokenEmail ||
+      tokenEmail !== requestEmail ||
+      tokenCandidateId !== requestCandidateId
+    ) {
+      return res.status(401).json({
+        error: "This test link does not match the candidate details.",
+      });
+    }
+
+    let user = await PsychometricUser.findOne({
+      $or: [{ candidateId: requestCandidateId }, { email: requestEmail }],
     });
 
-    res.status(200).json({
-      message: "User logged in successfully",
-      token: jwtToken,
-      user: { email: user.email, name: user.name },
+    if (!user) {
+      user = await PsychometricUser.create({
+        email: requestEmail,
+        candidateId: requestCandidateId,
+        name: decoded?.name || requestEmail.split("@")[0],
+      });
+    } else {
+      let dirty = false;
+      if (!user.candidateId) {
+        user.candidateId = requestCandidateId;
+        dirty = true;
+      }
+      if (!user.email) {
+        user.email = requestEmail;
+        dirty = true;
+      }
+      if (dirty) {
+        await user.save();
+      }
+    }
+
+    const completed = isAssessmentCompleted(user);
+
+    return res.status(200).json({
+      message: completed
+        ? "Assessment already completed"
+        : "Invite verified successfully",
+      completed,
+      user: {
+        email: user.email,
+        name: user.name,
+        candidateId: user.candidateId,
+      },
     });
   } catch (error) {
-    console.error("Error logging in user:", error.message);
+    console.error("Error during invite login:", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -124,21 +162,58 @@ const loginGoogleUser = async (req, res) => {
 // @route POST /api/psychometric/save-results
 const saveUserResults = async (req, res) => {
   try {
-    const { email, results, candidateId, hr } = req.body;
+    const { email, results, candidateId, hr, token } = req.body;
 
     if (!email || !results) {
       return res.status(400).json({ error: "Email and results are required" });
     }
 
-    let user = await PsychometricUser.findOne({ email });
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, inviteJwtSecret());
+        if (
+          decoded?.email?.toLowerCase?.()?.trim?.() !==
+            email.toLowerCase().trim() ||
+          (candidateId &&
+            String(decoded?.candidateId || "") !== String(candidateId))
+        ) {
+          return res.status(401).json({ error: "Invalid session token" });
+        }
+      } catch (err) {
+        return res.status(401).json({
+          error:
+            err.name === "TokenExpiredError"
+              ? "Session expired. Please open the link from your email again."
+              : "Invalid session token",
+        });
+      }
+    }
+
+    let user = await PsychometricUser.findOne({
+      $or: [
+        ...(candidateId ? [{ candidateId: String(candidateId) }] : []),
+        { email: email.toLowerCase().trim() },
+      ],
+    });
 
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      user = await PsychometricUser.create({
+        email: email.toLowerCase().trim(),
+        candidateId: candidateId ? String(candidateId) : undefined,
+      });
+    }
+
+    if (isAssessmentCompleted(user)) {
+      return res.status(400).json({
+        error: "Assessment already completed",
+        completed: true,
+      });
     }
 
     user.results = results;
+    user.assessmentCompleted = true;
     if (candidateId) {
-      user.candidateId = candidateId;
+      user.candidateId = String(candidateId);
     }
     await user.save();
 
@@ -177,11 +252,14 @@ const getUserResults = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    const completed = isAssessmentCompleted(user);
+
     res.status(200).json({
       name: user?.name,
       email: user?.email,
       candidateId: user?.candidateId,
       results: user?.results || {},
+      completed,
     });
   } catch (error) {
     console.error("Error fetching user results:", error.message);
@@ -192,7 +270,7 @@ const getUserResults = async (req, res) => {
 module.exports = {
   fetchAllUsers,
   createUser,
-  loginGoogleUser,
+  inviteLogin,
   saveUserResults,
   getUserResults,
 };

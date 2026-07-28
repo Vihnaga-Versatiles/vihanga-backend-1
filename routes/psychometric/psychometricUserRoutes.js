@@ -2,15 +2,15 @@ const express = require("express");
 const {
   createUser,
   fetchAllUsers,
-  loginGoogleUser,
+  inviteLogin,
   saveUserResults,
   getUserResults,
 } = require("../../controllers/psychometric/psychometricUserController");
 
 const router = express.Router();
 
-// Google login / candidate authentication
-router.post("/google-login", loginGoogleUser);
+// Invite-link authentication (no Google login)
+router.post("/invite-login", inviteLogin);
 
 // Assessment results
 router.post("/save-results", saveUserResults);

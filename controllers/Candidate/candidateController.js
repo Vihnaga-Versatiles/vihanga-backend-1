@@ -12,7 +12,12 @@ const {
 } = require("../../utils/recruitment/responseHandler");
 var path = require("path");
 var os = require("os");
-const { CLIENTURL, PhsychometricURL } = require("../../config/environment");
+const {
+  CLIENTURL,
+  PhsychometricURL,
+  JWT_SECRET,
+} = require("../../config/environment");
+const inviteJwtSecret = () => process.env.JWT_SECRET || JWT_SECRET;
 const employeeModel = require("../../models/employee.model");
 
 
@@ -566,7 +571,7 @@ const UpdateCandiate = async (req, res) => {
 
       const token = jwt.sign(
         payload,
-        process.env.JWT_SECRET || "your-secret-key",
+        inviteJwtSecret(),
         { expiresIn: "2h" }
       );
 
@@ -605,7 +610,7 @@ const UpdateCandiate = async (req, res) => {
 
         const token = jwt.sign(
           payload,
-          process.env.JWT_SECRET || "your-secret-key",
+          inviteJwtSecret(),
           { expiresIn: "2h" }
         );
         const isInterviewer1 = normalizedStatus === "interview 1";
@@ -652,7 +657,7 @@ const UpdateCandiate = async (req, res) => {
 
       const token = jwt.sign(
         payload,
-        process.env.JWT_SECRET || "your-secret-key",
+        inviteJwtSecret(),
         { expiresIn: "2h" }
       );
 
@@ -684,7 +689,7 @@ const UpdateCandiate = async (req, res) => {
 
       const token = jwt.sign(
         payload,
-        process.env.JWT_SECRET || "your-secret-key",
+        inviteJwtSecret(),
         { expiresIn: "2h" }
       );
 

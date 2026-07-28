@@ -12,9 +12,6 @@ const CLIENTURL="https://preprodhr.vihanga.io"
 // Psychometric assessment now lives inside the main frontend app
 const PhsychometricURL=`${CLIENTURL}/psychometric-test`;
 
-// Google OAuth client id used by the psychometric candidate login
-const GOOGLE_CLIENT_ID="573823221354-d175srri1ta9un581atkp7b9qenst32u.apps.googleusercontent.com";
-
 const expireTime=24
 module.exports = {
   PORT,
@@ -22,5 +19,4 @@ module.exports = {
   JWT_SECRET,
   CLIENTURL,
   PhsychometricURL,
-  GOOGLE_CLIENT_ID
 }

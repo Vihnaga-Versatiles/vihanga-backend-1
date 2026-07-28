@@ -21,6 +21,10 @@ const psychometricUserSchema = new mongoose.Schema(
         DisruptiveInnovator: 0,
       },
     },
+    assessmentCompleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
