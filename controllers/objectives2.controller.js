@@ -287,7 +287,14 @@ const updateObjective = async (req, res) => {
       let objectivesAchievementPoints = rewards.length > 0 ? rewards[0].objectivesAchievementPoints : 0;
 
       if (objective) {
-        req.body.dueDate = isValidDate(req.body.dueDate) ? req.body.dueDate : null;
+        // Only overwrite dueDate when a valid date is provided; otherwise keep existing
+        if (Object.prototype.hasOwnProperty.call(req.body, "dueDate")) {
+          if (isValidDate(req.body.dueDate)) {
+            req.body.dueDate = req.body.dueDate;
+          } else {
+            delete req.body.dueDate;
+          }
+        }
         let dynamicRewardPoints = Number(req.body.dynamicRewardPoints) || 0;
         let weight = Number(req.body.weight) || 0;
 

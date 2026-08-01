@@ -81,7 +81,21 @@ function totalRewardPointsTask(percent = 0, krAchievementPercent = 0, krAchievem
 }
 
 function isValidDate(d) {
-  return !isNaN(Date.parse(d));
+  if (d === null || d === undefined || d === "" || d === 0 || d === "0") {
+    return false;
+  }
+  if (d instanceof Date) {
+    const time = d.getTime();
+    return !isNaN(time) && time !== 0;
+  }
+  if (typeof d === "number") {
+    if (!Number.isFinite(d) || d === 0) return false;
+    const time = new Date(d).getTime();
+    return !isNaN(time) && time !== 0;
+  }
+  // Strings / ISO dates
+  const parsed = Date.parse(d);
+  return !isNaN(parsed) && parsed !== 0;
 }
 
 function getDueMessage(task) {

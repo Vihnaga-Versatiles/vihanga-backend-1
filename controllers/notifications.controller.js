@@ -63,12 +63,8 @@ const createNotification = async (req, res) => {
 const getAllNotificationsByUser = async (req, res) => {
   // #swagger.tags = ['Notifications']
   try {
-    let obj = {};
-    if (req.params.role === "Manager") {
-      obj = {}
-    } else {
-      obj = { "row.employeeReferenceId": req.params.id }
-    }
+    // Always scope to the current user so badge count matches the dropdown list
+    const obj = { "row.employeeReferenceId": req.params.id };
     const Tasks = await NotificationModel.find(obj).sort({ _id: -1 }).limit(10);
     res.status(200).send(
       successResponse({
