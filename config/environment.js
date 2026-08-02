@@ -7,7 +7,7 @@ const DATABASE_URL = `mongodb+srv://admin_db_user:7032031366@Aa@hr-vihanga.wzt14
 const JWT_SECRET = "$2a$12$e9HMflla.nPm9t8LOopEdeTYD.fmAYbxQ4p6XbLNylKRgcDEMXPba"
   // const CLIENTURL="http://localhost:4300";
 // const CLIENTURL="https://talentspotifyapp.com"
-const CLIENTURL="https://preprodhr.vihanga.io"
+const CLIENTURL="https://hr.vihanga.io"
 
 // Psychometric assessment now lives inside the main frontend app
 const PhsychometricURL=`${CLIENTURL}/psychometric-test`;
