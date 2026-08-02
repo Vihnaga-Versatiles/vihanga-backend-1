@@ -26,7 +26,7 @@ const successResponse = ({ message, data, ...rest }) => ({ success: true, data: 
 const failResponse = ({ message, data, ...rest }) => ({ success: false, data: data ? data : null, message, ...rest });
 
 const requestDemo = async (req, res) => {
-  // #swagger.tags = ['TalentSpotify Landing Page']
+  // #swagger.tags = ['Vihanga Landing Page']
   try {
     // Get drynoEmail from body or header
     const drynoEmail = req.body.drynoEmail || req.headers['dryno-email'];
@@ -105,7 +105,7 @@ const requestDemo = async (req, res) => {
 };
 
 const contactUs = async (req, res) => {
-  // #swagger.tags = ['TalentSpotify Landing Page']
+  // #swagger.tags = ['Vihanga Landing Page']
   try {
     let requestBody = {
       name: req.body.name,
@@ -165,7 +165,7 @@ const contactUs = async (req, res) => {
   }
 };
 const career = async (req, res) => {
-  // #swagger.tags = ['TalentSpotify Landing Page']
+  // #swagger.tags = ['Vihanga Landing Page']
   try {
     let requestBody = {
       name: req.body.name,
@@ -234,7 +234,7 @@ const career = async (req, res) => {
   }
 };
 const emailsignup = async (req, res) => {
-  // #swagger.tags = ['TalentSpotify Landing Page']
+  // #swagger.tags = ['Vihanga Landing Page']
   try {
     let requestBody = {
       email: req.body.email
@@ -300,7 +300,7 @@ const emailsignup = async (req, res) => {
   }
 };
 const sendBirthdayWish = async (req, res) => {
-  // #swagger.tags = ['TalentSpotify Landing Page']
+  // #swagger.tags = ['Vihanga Landing Page']
   try {
     let requestBody = {
       name: req.body.name,
@@ -351,7 +351,7 @@ const sendBirthdayWish = async (req, res) => {
 
   const legalEntity = employee?.employmentInformation?.legalEntity;
 
-  requestBody.legalEntity = legalEntity || 'Talent Spotify';
+  requestBody.legalEntity = legalEntity || 'Vihanga';
   let logoUrl = process.env.DEFAULT_LOGO_URL || null;
   try {
     if (employee?.companyId) {
@@ -427,7 +427,7 @@ const sendBirthdayWish = async (req, res) => {
 };
 
 const getAllWishes = async (req, res) => {
-  // #swagger.tags = ['TalentSpotify Landing Page']
+  // #swagger.tags = ['Vihanga Landing Page']
   try {
     const { type, page = 1, limit = 10 } = req.query;
     

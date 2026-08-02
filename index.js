@@ -121,7 +121,7 @@ app.use("*", (req, res) => {
 
 //Default Route
 app.get("/", (req, res) => {
-  res.send(`<h1>Welcome to Talent Spotify Backend Server</h1>`,);
+  res.send(`<h1>Welcome to Vihanga Backend Server</h1>`,);
 });
 
 // Email queue status endpoint

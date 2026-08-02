@@ -686,7 +686,7 @@ const getHREmployees = async (companyId) => {
  * @param {string} notificationType - Type of notification (manager, hr, employee)
  * @param {string} companyName - Company name (optional)
  */
-const sendApprovalNotification = async (reviewForm, recipientEmail, recipientName, notificationType, companyName = 'TalentSpotify') => {
+const sendApprovalNotification = async (reviewForm, recipientEmail, recipientName, notificationType, companyName = 'Vihanga') => {
   try {
     if (!recipientEmail) {
       console.warn(`No email found for recipient: ${recipientName}`);

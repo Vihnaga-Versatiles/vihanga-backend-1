@@ -269,7 +269,7 @@ const updateNotificationTask = async (req, res) => {
               //  } else {
               //    var mailOptions = {
               //      from: "info@talentspotify.com",
-              //      fromname: "Talent Spotify",
+              //      fromname: "Vihanga",
               //      to: "mogilivenkatesh3@gmail.com",//toMail,
               //      cc: ["mogilivenkatesh3@gmail.com", "aneel@appsdreamz.com"], //ccMail,
               //      subject,
@@ -395,7 +395,7 @@ const updateNotificationKR = async (req, res) => {
               //  } else {
               //    var mailOptions = {
               //      from: "info@talentspotify.com",
-              //      fromname: "Talent Spotify",
+              //      fromname: "Vihanga",
               //      to: "mogilivenkatesh3@gmail.com",//toMail,
               //      cc: ["mogilivenkatesh3@gmail.com", "aneel@appsdreamz.com"], //ccMail,
               //      subject,
@@ -563,7 +563,7 @@ const updateNotification = async (req, res) => {
                 //  } else {
                 //    var mailOptions = {
                 //      from: "info@talentspotify.com",
-                //      fromname: "Talent Spotify",
+                //      fromname: "Vihanga",
                 //      to: "mogiliv3@gmail.com",//toMail,
                 //      cc: ["mogiliv3@gmail.com", "aneel@appsdreamz.com"], //ccMail,
                 //      subject,
@@ -732,7 +732,7 @@ const updateNotificationGoal = async (req, res) => {
                 //  } else {
                 //    var mailOptions = {
                 //      from: "info@talentspotify.com",
-                //      fromname: "Talent Spotify",
+                //      fromname: "Vihanga",
                 //      to: "mogiliv3@gmail.com",//toMail,
                 //      cc: ["mogiliv3@gmail.com", "aneel@appsdreamz.com"], //ccMail,
                 //      subject,

@@ -105,7 +105,7 @@ class EmailQueue {
         console.log(`📤 Attempting to send email to ${to} (attempt ${emailJob.attempts}/${RETRY_ATTEMPTS})`);
         
         const mailOptions = {
-          from: "contact@talentspotify.com",
+          from: process.env.EMAIL_USER || "vihangasupport@gmail.com",
           to,
           subject,
           text: useHtmlTemplate ? undefined : body,

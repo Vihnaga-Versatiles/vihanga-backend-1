@@ -184,13 +184,13 @@ const redeemUpdate = async (req, res) => {
           //    to: ["info@talentspotify.com", "mogiliv3@gmail.com"],
           //    //cc: ["info@talentspotify.com", "mogiliv3@gmail.com"],
           //    from: "info@talentspotify.com",
-          //    fromname: "Talent Spotify",
+          //    fromname: "Vihanga",
           //    subject: `Redeem Points ${req.body.status === "approved" ? "Approved" : "Rejected"}`,
           //    html: `
           //        <p>Hi,<br/><br/>
           //        <p style="color:${req.body.status === "approved" ? 'green' : 'red'}">Your redeem points ${doc.rewardPoints} worth of USD. ${doc.rewardAmount} are ${req.body.status === "approved" ? "Approved" : "Rejected"}</p>.
           //        <br/><br/>
-          //        <p>Talent Spotify</p>
+          //        <p>Vihanga</p>
           //        `,
           //  })
           //  .then((response) => {
@@ -238,7 +238,7 @@ const createRedeemPoints = async (req, res) => {
           //    to: ["info@talentspotify.com", "mogiliv3@gmail.com"],
           //    //cc: ["info@talentspotify.com", "mogiliv3@gmail.com"],
           //    from: "info@talentspotify.com",
-          //    fromname: "Talent Spotify",
+          //    fromname: "Vihanga",
           //    subject: "Redeem Points Requested",
           //    html: `
           //    <p>Hi,<br/><br/>
@@ -246,7 +246,7 @@ const createRedeemPoints = async (req, res) => {
           //    <br/>
           //    Go to <a href="https://talent-spotify-frontend-git-ollaa-company-talentspotify.vercel.app/admin/rewards/rewardsRedemption">Rewards and Redemptions</a> and Approve/Reject the request.
           //    <br/><br/>
-          //    <p>Talent Spotify</p>
+          //    <p>Vihanga</p>
           //    `,
           //  })
           //  .then((response) => {

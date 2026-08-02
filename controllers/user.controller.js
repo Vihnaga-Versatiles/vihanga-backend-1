@@ -52,13 +52,13 @@ const registerUser = async (req, res) => {
     //  .sendMail({
     //    to: user.email,
     //    from: "info@talentspotify.com",
-    //fromname: "Talent Spotify",
+    //fromname: "Vihanga",
     //    subject: "OTP Verification",
     //    html: `
     //  <p>Hi ${user.name},<br/><br/>
     //  This is your otp <b>${otp}</b>. It will expire in 24 hours.
     //  <br/><br/>
-    //  <p>Talent Spotify</p>
+    //  <p>Vihanga</p>
     //  `,
     //  })
     //  .then((response) => {
@@ -512,13 +512,13 @@ const forgotpassword = async (req, res) => {
             //  .sendMail({
             //    to: isAdded.contactInformation.email,
             //    from: "info@talentspotify.com",
-            //    fromname: "Talent Spotify",
+            //    fromname: "Vihanga",
             //    subject: "Reset Password Link",
             //    html: `
             //  <p>Hi ${isAdded.personalInformation.firstName + " " + isAdded.personalInformation.lastName},<br/><br/>
             //  Please <a href="http://localhost:3000/user/resetpassword/${token}"> Click This Link <a/> To Reset Password . It will expire in 24 hours.
             //  <br/><br/>
-            //  <p>Talent Spotify</p>
+            //  <p>Vihanga</p>
             //  `,
             //  })
             //  .then((response) => {

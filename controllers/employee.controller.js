@@ -1105,7 +1105,7 @@ const forgotpassword = async (req, res) => {
             <p><strong>Note:</strong> This link will expire in 1 hour for security reasons.</p>
             <p>If you did not request this password reset, please ignore this email.</p>
             <br>
-            <p>Best regards,<br>Talent Spotify Team</p>
+            <p>Best regards,<br>Vihanga Team</p>
           </div>
         `;
 
@@ -1317,7 +1317,7 @@ const sendEmailToEmployee = async (req, res) => {
       sendTasks.push(() =>
         sendEmail(
           email,
-          subject || "Your Talent Spotify Credentials",
+          subject || "Your Vihanga Credentials",
           emailBody,
           true
         )

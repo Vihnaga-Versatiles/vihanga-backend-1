@@ -60,7 +60,7 @@ const statusUpdateTemplate = ({
     } = credentialsDetails || {};
 
     mainContent = `
-      <p>Please find your login credentials for Talent Spotify below.</p>
+      <p>Please find your login credentials for Vihanga below.</p>
       <div class="leave-details-card">
         <h3 style="color: #0073e6; margin-bottom: 15px; font-size: 18px;"> Login Details</h3>
         <div style="padding: 10px 0;">
@@ -116,7 +116,7 @@ const statusUpdateTemplate = ({
     } = taskDetails || {};
 
     mainContent = `
-      <p>You have been assigned a new task in Talent Spotify.</p>
+      <p>You have been assigned a new task in Vihanga.</p>
 
       <div class="leave-details-card">
         <h3 style="color: #0073e6; margin-bottom: 15px; font-size: 18px;">Task Assignment</h3>
@@ -174,7 +174,7 @@ const statusUpdateTemplate = ({
         </a>
       </div>` : `
       <p style="margin-top: 10px;">
-        Please log in to Talent Spotify to review the task details and take action.
+        Please log in to Vihanga to review the task details and take action.
       </p>
       `}
     `;
@@ -751,7 +751,7 @@ const statusUpdateTemplate = ({
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>${
-        credentialsEmail ? 'Your Talent Spotify Login Credentials' :
+        credentialsEmail ? 'Your Vihanga Login Credentials' :
         taskAssigned ? 'Task Assigned to You' :
         leaveApproval ? 'Leave Approval Required' : 
         leaveRejected ? 'Leave Request Rejected' : 
