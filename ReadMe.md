@@ -1,4 +1,4 @@
-# Talent Spotify Backend
+# Vihanga Backend
 
 ## Clone the project
 

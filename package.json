@@ -1,7 +1,7 @@
 {
   "name": "talent-spotify-backend",
   "version": "1.0.1",
-  "description": "Talent Spotify Backend Using Nodejs, Express, MongoDB",
+  "description": "Vihanga Backend Using Nodejs, Express, MongoDB",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
