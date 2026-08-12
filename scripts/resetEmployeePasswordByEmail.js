@@ -39,6 +39,7 @@ async function run() {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true,
+    tls: true,
   });
 
   try {

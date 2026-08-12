@@ -26,13 +26,13 @@ const connectDB = () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       useCreateIndex: true,
+      tls: true,
     }).then(async (res) => {
       //const TaskModelChange = res.models.tasks2.watch();
       //TaskModelChange.on("change", (change) => {
       //  saveChangedData(change);
       //});
       console.log('MongoDB Database Connection Success!');
-      console.log(DATABASE_URL)
 
       // Ensure Employee indexes are correct (scope email uniqueness by company)
       try {

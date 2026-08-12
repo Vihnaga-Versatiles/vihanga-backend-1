@@ -454,6 +454,7 @@ async function main() {
     await mongoose.connect(environment.DATABASE_URL, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      tls: true,
     });
     
     console.log('✅ Database connected successfully!');
