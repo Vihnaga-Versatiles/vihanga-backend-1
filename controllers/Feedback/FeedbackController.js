@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { uploadFileToDrive } = require("../../middlewares/recruitment/drive");
+const { uploadFileToDrive, signS3UrlIfNeeded, signS3UrlsInValue } = require("../../middlewares/recruitment/drive");
 const { sendEmail } = require("../../middlewares/recruitment/sendMail");
 const CandidateModel = require("../../models/recruitment/Candidate/CandidateModel");
 const {
@@ -195,7 +195,7 @@ const getFeedback = async (req, res) => {
 
     const transformedFeedback = {
       _id: feedback._id,
-      uploadedDocument: feedback.uploadedDocument,
+      uploadedDocument: await signS3UrlIfNeeded(feedback.uploadedDocument),
       candidateId: feedback.candidateId,
       round: feedback.round,
       ratings: feedback.ratings,
@@ -341,7 +341,7 @@ if (!candidate) {
 
     return res.status(200).json({
       message: 'Data updated successfully',
-      data: updatedCandidate
+      data: await signS3UrlsInValue(updatedCandidate)
     });
   } catch (error) {
     console.error('Error in documentUpload:', error);

@@ -2,7 +2,12 @@
 
 // const {sendEmail} = require("../../middlewares/recruitment/sendMail");
 const { sendEmail } = require("../../middlewares/recruitment/sendMail");
-const { uploadFileToDrive } = require("../../middlewares/recruitment/drive");
+const {
+  uploadFileToDrive,
+  getFileFromS3,
+  extractS3Key,
+  signS3UrlsInValue,
+} = require("../../middlewares/recruitment/drive");
 const CandidateModel = require("../../models/recruitment/Candidate/CandidateModel");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
@@ -342,12 +347,16 @@ const getAllCandidates = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
+    const signedCandidates = await Promise.all(
+      candidates.map((item) => signS3UrlsInValue(item))
+    );
+
     const result = {
       totalRecords: total,
       page,
       limit,
       totalPages: Math.ceil(total / limit),
-      data: candidates,
+      data: signedCandidates,
     };
 
     return successResponse(res, result, "Fetched candidates with pagination");
@@ -424,7 +433,11 @@ const getCandidateById = async (req, res) => {
       return errorResponse(res, new Error("Candidate not found"), 404);
     }
 
-    return successResponse(res, candidate, "Candidate fetched successfully");
+    const signedCandidates = await Promise.all(
+      candidate.map((item) => signS3UrlsInValue(item))
+    );
+
+    return successResponse(res, signedCandidates, "Candidate fetched successfully");
   } catch (error) {
     return errorResponse(res, error);
   }
@@ -443,7 +456,11 @@ const getCandidatesAll = async (req, res) => {
       return errorResponse(res, new Error("Candidate not found"), 404);
     }
 
-    return successResponse(res, candidate, "Candidate fetched successfully");
+    const signedCandidates = await Promise.all(
+      candidate.map((item) => signS3UrlsInValue(item))
+    );
+
+    return successResponse(res, signedCandidates, "Candidate fetched successfully");
   } catch (error) {
     return errorResponse(res, error);
   }
@@ -1061,46 +1078,35 @@ const uploadFiles = async (req, res) => {
   }
 };
 
-// Proxy endpoint to download files from S3 (bypasses CORS)
+// Proxy endpoint to download files from private S3 (bypasses CORS)
 const proxyFileDownload = async (req, res) => {
   try {
-    const { fileUrl } = req.query;
-    
+    const { fileUrl, inline } = req.query;
+
     if (!fileUrl) {
       return res.status(400).json({ error: "fileUrl parameter is required" });
     }
 
-    console.log("Proxying download for:", fileUrl);
+    const s3Object = await getFileFromS3(fileUrl);
+    const key = extractS3Key(fileUrl);
+    const filename = decodeURIComponent((key || fileUrl).split("/").pop());
+    const dispositionType = inline === "1" ? "inline" : "attachment";
 
-    // Use axios to fetch the file
-    const response = await axios.get(fileUrl, {
-      responseType: 'arraybuffer',
-      headers: {
-        'Accept': '*/*'
-      }
-    });
-
-    // Extract filename from URL
-    const urlParts = fileUrl.split('/');
-    const filename = decodeURIComponent(urlParts[urlParts.length - 1]);
-
-    // Set proper headers for file download
     res.set({
-      'Content-Type': response.headers['content-type'] || 'application/octet-stream',
-      'Content-Length': response.headers['content-length'],
-      'Content-Disposition': `attachment; filename="${filename}"`,
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      "Content-Type": s3Object.ContentType || "application/octet-stream",
+      "Content-Length": s3Object.ContentLength,
+      "Content-Disposition": `${dispositionType}; filename="${filename}"`,
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET",
+      "Access-Control-Allow-Headers": "Content-Type",
     });
 
-    // Send the file data
-    res.send(Buffer.from(response.data));
+    res.send(s3Object.Body);
   } catch (error) {
     console.error("Error proxying file download:", error.message);
-    res.status(500).json({ 
-      error: "Failed to download file", 
-      message: error.message 
+    res.status(error.code === "NoSuchKey" ? 404 : 500).json({
+      error: "Failed to download file",
+      message: error.message,
     });
   }
 };
