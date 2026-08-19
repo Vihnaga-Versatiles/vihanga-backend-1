@@ -1,13 +1,8 @@
 const AWS = require("aws-sdk");
-require("dotenv").config();
 
-AWS.config.update({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION,
+const s3 = new AWS.S3({
+  region: process.env.AWS_REGION || "ap-south-1",
 });
-
-const s3 = new AWS.S3();
 const DEFAULT_SIGNED_URL_EXPIRY = 60 * 60; // 1 hour
 
 const KNOWN_S3_PREFIXES = ["recruitementfiles/", "feedbackfiles/", "theme-logos/"];
