@@ -2,6 +2,11 @@
 const { DATABASE_URL } = require("./environment");
 //const AuditTrailModel = require("../models/AuditTrail");
 
+const maskDatabaseUrl = (url) => {
+  if (!url) return "(not set)";
+  return url.replace(/\/\/([^:@/]+):([^@/]+)@/, "//$1:****@");
+};
+
 //const saveChangedData = async (change) => {
 //  console.log("change document", change)
 //  let newChangeData = await AuditTrailModel({
@@ -22,6 +27,8 @@ const { DATABASE_URL } = require("./environment");
 
 const connectDB = () => {
   try {
+    console.log("[MongoDB] Connecting to:", maskDatabaseUrl(DATABASE_URL));
+
     mongoose.connect(DATABASE_URL, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
