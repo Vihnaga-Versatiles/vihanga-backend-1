@@ -724,14 +724,15 @@ const getAllTasks = async (req, res) => {
   // #swagger.tags = ['Tasks V2']
   try {
     const { userId, companyId } = req.params;
-    const { type = 'me', page = 0, limit = 10, search = '' } = req.query;
+    const { type = 'me', page = 0, limit = 10, search = '', exportAll = 'false' } = req.query;
     const normalizedType = (type || 'me').toString().trim().toLowerCase();
+    const isExportAll = exportAll === 'true';
 
-    console.log('Params:', { type, userId, companyId, page, limit, search });
+    console.log('Params:', { type, userId, companyId, page, limit, search, exportAll });
 
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const skip = pageNum * limitNum;
+    const pageNum = isExportAll ? 0 : parseInt(page);
+    const limitNum = isExportAll ? 0 : parseInt(limit);
+    const skip = isExportAll ? 0 : pageNum * limitNum;
 
     let isSuperAdmin = userId !== "all" ? await EmployModel.findOne({
       _id: userId,
@@ -777,10 +778,11 @@ const getAllTasks = async (req, res) => {
       // Get total count for pagination
       totalCount = await TasksModel.countDocuments(mainTaskQuery);
 
-      mainTasks = await TasksModel.find(mainTaskQuery)
-        .sort({ _id: -1 })
-        .skip(skip)
-        .limit(limitNum);
+      let allTasksQuery = TasksModel.find(mainTaskQuery).sort({ _id: -1 });
+      if (!isExportAll && limitNum > 0) {
+        allTasksQuery = allTasksQuery.skip(skip).limit(limitNum);
+      }
+      mainTasks = await allTasksQuery;
 
       const mainTaskIds = mainTasks.length > 0 ? mainTasks.map(mainTask => mainTask._id.toString()) : [];
 
@@ -913,11 +915,12 @@ const getAllTasks = async (req, res) => {
       totalCount = await TasksModel.countDocuments(mainTaskQuery);
       console.log('Total Count:', totalCount);
 
-      // Fetch main tasks for target users with pagination
-      mainTasks = await TasksModel.find(mainTaskQuery)
-        .sort({ _id: -1 })
-        .skip(skip)
-        .limit(limitNum);
+      // Fetch main tasks for target users with pagination (unless exportAll)
+      let mainTasksQuery = TasksModel.find(mainTaskQuery).sort({ _id: -1 });
+      if (!isExportAll && limitNum > 0) {
+        mainTasksQuery = mainTasksQuery.skip(skip).limit(limitNum);
+      }
+      mainTasks = await mainTasksQuery;
 
       console.log('Main Tasks Found:', mainTasks.length);
 

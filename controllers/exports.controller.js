@@ -1,21 +1,9 @@
 const Employee = require("../models/employee.model");
 const Objectives = require("../models/objectives.model");
-const TimeTracking = require("../models/timeTrackingModel/TimeTrackingModel");
-
-// Small CSV helper that escapes values per RFC4180 basics
-const toCsv = (columns, rows) => {
-  const escape = (value) => {
-    if (value === null || value === undefined) return "";
-    const str = String(value);
-    if (/[",\n\r]/.test(str)) {
-      return '"' + str.replace(/"/g, '""') + '"';
-    }
-    return str;
-  };
-  const header = columns.map(c => escape(c.label)).join(",");
-  const lines = rows.map(row => columns.map(c => escape(row[c.key])).join(","));
-  return [header, ...lines].join("\r\n");
-};
+const LeavesModel = require("../models/recruitment/Leaves/Leaves.model");
+const { buildLeavesFilters } = require("../services/leavesQuery.service");
+const { fetchAllTasksForExport } = require("../services/tasksExport.service");
+const { sendExportResponse, formatDate } = require("../utils/exportHelper");
 
 const badRequest = (res, message) => res.status(400).send({ success: false, message });
 
@@ -46,10 +34,10 @@ const exportEmployees = async (req, res) => {
       { key: "maritalStatus", label: "Marital Status" },
       { key: "education", label: "Highest Education Level" },
       { key: "religion", label: "Religion" },
-      { key: "lineManager", label: "Line Manager" }
+      { key: "lineManager", label: "Line Manager" },
     ];
 
-    const rows = employees.map(e => ({
+    const rows = employees.map((e) => ({
       employeeNumber: e.employmentInformation?.employeeNumber || "",
       firstName: e.personalInformation?.firstName || "",
       lastName: e.personalInformation?.lastName || "",
@@ -61,43 +49,180 @@ const exportEmployees = async (req, res) => {
       grade: e.employmentInformation?.grade || "",
       location: e.employmentInformation?.location || "",
       status: e.employmentInformation?.status || e.status || "",
-      hireDate: e.employmentInformation?.hireDate ? new Date(e.employmentInformation.hireDate).toISOString().slice(0, 10) : "",
-      inactiveDate: e.employmentInformation?.inactiveDate ? new Date(e.employmentInformation.inactiveDate).toISOString().slice(0, 10) : "",
+      hireDate: e.employmentInformation?.hireDate ? formatDate(e.employmentInformation.hireDate) : "",
+      inactiveDate: e.employmentInformation?.inactiveDate ? formatDate(e.employmentInformation.inactiveDate) : "",
       gender: e.personalInformation?.gender || "",
-      dateOfBirth: e.personalInformation?.dateOfBirth ? new Date(e.personalInformation.dateOfBirth).toISOString().slice(0, 10) : "",
+      dateOfBirth: e.personalInformation?.dateOfBirth ? formatDate(e.personalInformation.dateOfBirth) : "",
       maritalStatus: e.employmentInformation?.maritalStatus || "",
       education: e.employmentInformation?.highestEducationLevel || "",
       religion: e.employmentInformation?.religion || "",
-      lineManager: e.employmentInformation?.lineManager || ""
+      lineManager: e.employmentInformation?.lineManager || "",
     }));
 
-    const csv = toCsv(columns, rows);
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", "attachment; filename=employees_export.csv");
-    return res.status(200).send(csv);
+    return sendExportResponse(res, {
+      columns,
+      rows,
+      filename: "employees_export",
+      format: req.query.format,
+    });
   } catch (err) {
     return res.status(500).send({ success: false, message: err?.message || "Failed to export employees" });
   }
 };
 
-// GET /exports/objectives?companyId=...
+// GET /exports/leaves?companyId=...&type=...&currentUserId=...&startDate=...&endDate=...
+const exportLeaves = async (req, res) => {
+  try {
+    const { companyId, currentUserId, format } = req.query;
+    if (!companyId) return badRequest(res, "companyId is required");
+    if (!currentUserId) return badRequest(res, "currentUserId is required");
+
+    const { filters } = await buildLeavesFilters(req.query);
+    const leaves = await LeavesModel.find(filters).sort({ createdAt: -1 }).lean();
+
+    const columns = [
+      { key: "employeeId", label: "Employee ID" },
+      { key: "employeeName", label: "Employee Name" },
+      { key: "department", label: "Department" },
+      { key: "leaveType", label: "Leave Type" },
+      { key: "leaveFromDate", label: "Leave From Date", format: (r) => formatDate(r.leaveFromDate) },
+      { key: "leaveToDate", label: "Leave To Date", format: (r) => formatDate(r.leaveToDate) },
+      { key: "duration", label: "Duration" },
+      { key: "status", label: "Status" },
+      { key: "pendingWith", label: "Pending With" },
+      { key: "note", label: "Note" },
+    ];
+
+    const rows = leaves.map((leave) => ({
+      employeeId: leave.employeeInfo?.employeeNumber || leave.empId || "",
+      employeeName: leave.employeeInfo?.name || "",
+      department: leave.employeeInfo?.department || "",
+      leaveType: leave.absenceType || "",
+      leaveFromDate: leave.from,
+      leaveToDate: leave.to,
+      duration: leave.durationOfAbsence || "",
+      status: leave.status || "",
+      pendingWith:
+        leave.status === "pending" && Array.isArray(leave.currentApprovers) && leave.currentApprovers.length
+          ? leave.currentApprovers.map((a) => a.approverName || a.approverId).join(", ")
+          : "N/A",
+      note: leave.note || "",
+    }));
+
+    return sendExportResponse(res, {
+      columns,
+      rows,
+      filename: `leave-records-export-${formatDate(new Date())}`,
+      format,
+    });
+  } catch (err) {
+    return res.status(500).send({ success: false, message: err?.message || "Failed to export leaves" });
+  }
+};
+
+// GET /exports/tasks/:userId/:companyId?type=...&search=...
+const exportTasks = async (req, res) => {
+  try {
+    const { userId, companyId } = req.params;
+    const { type, search, format } = req.query;
+    if (!userId || !companyId) return badRequest(res, "userId and companyId are required");
+
+    const rows = await fetchAllTasksForExport({ userId, companyId, type, search });
+
+    const columns = [
+      { key: "type", label: "Type" },
+      { key: "title", label: "Title" },
+      { key: "description", label: "Description" },
+      { key: "progress", label: "Progress (%)" },
+      { key: "status", label: "Status" },
+      { key: "owner", label: "Owner" },
+      { key: "assignee", label: "Assignee" },
+      { key: "startDate", label: "Start Date", format: (r) => formatDate(r.startDate) },
+      { key: "dueDate", label: "Due Date", format: (r) => formatDate(r.dueDate) },
+      { key: "priority", label: "Priority" },
+      { key: "createdAt", label: "Created At", format: (r) => formatDate(r.createdAt) },
+    ];
+
+    return sendExportResponse(res, {
+      columns,
+      rows,
+      filename: `tasks-export-${formatDate(new Date())}`,
+      format,
+    });
+  } catch (err) {
+    return res.status(500).send({ success: false, message: err?.message || "Failed to export tasks" });
+  }
+};
+
+// GET /exports/objectives?companyId=...&userId=...&type=...&okrYear=...
 const exportObjectives = async (req, res) => {
   try {
-    const { companyId } = req.query;
+    const { companyId, userId, type, okrYear, empId, format } = req.query;
     if (!companyId) return badRequest(res, "companyId is required");
 
+    const objectiveQuery = { companyId };
+    if (okrYear) objectiveQuery.okrYear = okrYear;
+    if (empId) objectiveQuery.employeeReferenceId = empId;
+
+    const normalizedType = (type || "me").toString().trim().toLowerCase();
+    let employeeIds = null;
+
+    if (normalizedType === "me" && userId) {
+      objectiveQuery.employeeReferenceId = userId;
+    } else if ((normalizedType === "myteam" || normalizedType === "team") && userId) {
+      const teamMembers = await Employee.find({
+        companyId,
+        "employmentInformation.status": "Active",
+        "employmentInformation.lineManager": userId,
+      }).select("_id");
+      employeeIds = teamMembers.map((m) => m._id.toString());
+      if (employeeIds.length) {
+        objectiveQuery.employeeReferenceId = { $in: employeeIds };
+      }
+    } else if ((normalizedType === "myfunction" || normalizedType === "function") && userId) {
+      const currentUser = await Employee.findById(userId).select(
+        "employmentInformation.department employmentInformation.legalEntityMappings"
+      );
+      let userFunctions = [];
+      if (currentUser?.employmentInformation?.department) {
+        userFunctions.push(currentUser.employmentInformation.department);
+      }
+      if (Array.isArray(currentUser?.employmentInformation?.legalEntityMappings)) {
+        currentUser.employmentInformation.legalEntityMappings.forEach((m) => {
+          if (m.function) userFunctions.push(m.function);
+        });
+      }
+      userFunctions = [...new Set(userFunctions)];
+      if (userFunctions.length) {
+        const functionMembers = await Employee.find({
+          companyId,
+          "employmentInformation.status": "Active",
+          $or: [
+            { "employmentInformation.department": { $in: userFunctions } },
+            { "employmentInformation.legalEntityMappings.function": { $in: userFunctions } },
+          ],
+        }).select("_id");
+        employeeIds = functionMembers.map((m) => m._id.toString());
+        if (employeeIds.length) {
+          objectiveQuery.employeeReferenceId = { $in: employeeIds };
+        }
+      }
+    }
+
     const [objectives, employees] = await Promise.all([
-      Objectives.find({ companyId }).lean(),
-      Employee.find({ companyId }).select("_id personalInformation.firstName personalInformation.lastName employmentInformation.employeeNumber employmentInformation.department employmentInformation.designation employmentInformation.legalEntityMappings").lean()
+      Objectives.find(objectiveQuery).lean(),
+      Employee.find({ companyId })
+        .select(
+          "_id personalInformation.firstName personalInformation.lastName employmentInformation.employeeNumber employmentInformation.department employmentInformation.designation employmentInformation.legalEntityMappings"
+        )
+        .lean(),
     ]);
 
-    const employeeMap = new Map(
-      employees.map(e => [e._id.toString(), e])
-    );
+    const employeeMap = new Map(employees.map((e) => [e._id.toString(), e]));
 
     const getFunctionName = (emp) => {
       if (!emp?.employmentInformation) return "";
-      const primary = emp.employmentInformation.legalEntityMappings?.find(m => m.type === "PRIMARY");
+      const primary = emp.employmentInformation.legalEntityMappings?.find((m) => m.type === "PRIMARY");
       return primary?.function || emp.employmentInformation.department || "";
     };
 
@@ -109,75 +234,58 @@ const exportObjectives = async (req, res) => {
       { key: "okrPeriod", label: "OKR Period" },
       { key: "okrYear", label: "OKR Year" },
       { key: "objective", label: "Objective" },
-      { key: "dueDate", label: "Due Date" },
+      { key: "dueDate", label: "Due Date", format: (r) => formatDate(r.dueDate) },
       { key: "weight", label: "Weight" },
       { key: "successMetrics", label: "Success Metrics" },
       { key: "progressStatus", label: "Progress (%)" },
       { key: "status", label: "Status" },
       { key: "dimension", label: "Dimension" },
       { key: "objectiveStatus", label: "Objective Status" },
-      { key: "approvalRequired", label: "Approval Required" },
-      { key: "cascaded", label: "Cascaded" },
-      { key: "cascadedType", label: "Cascaded Type" }
     ];
 
-    const rows = objectives.map(o => {
+    const rows = objectives.map((o) => {
       const emp = employeeMap.get((o.employeeReferenceId || o.owner || "").toString());
-      const employeeNumber = emp?.employmentInformation?.employeeNumber || "";
-      const employeeName = emp ? `${emp.personalInformation?.firstName || ""} ${emp.personalInformation?.lastName || ""}`.trim() : "";
-      const functionName = getFunctionName(emp);
-      const designation = emp?.employmentInformation?.designation || "";
       return {
-        employeeNumber,
-        employeeName,
-        functionName,
-        designation,
+        employeeNumber: emp?.employmentInformation?.employeeNumber || "",
+        employeeName: emp
+          ? `${emp.personalInformation?.firstName || ""} ${emp.personalInformation?.lastName || ""}`.trim()
+          : "",
+        functionName: getFunctionName(emp),
+        designation: emp?.employmentInformation?.designation || "",
         okrPeriod: o.okrPeriod || "",
         okrYear: o.okrYear || "",
         objective: o.objective || "",
-        dueDate: o.dueDate ? new Date(o.dueDate).toISOString().slice(0, 10) : "",
+        dueDate: o.dueDate,
         weight: o.weight ?? "",
         successMetrics: o.successMetrics || "",
         progressStatus: typeof o.progressStatus === "number" ? Math.min(100, Math.max(0, o.progressStatus)) : "",
         status: o.status || "",
         dimension: o.dimension || "",
         objectiveStatus: o.objectiveStatus || "",
-        approvalRequired: o.approvalRequired ? "Yes" : "No",
-        cascaded: o.cascaded ? "Yes" : "No",
-        cascadedType: o.cascadedType || ""
       };
     });
 
-    const csv = toCsv(columns, rows);
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", "attachment; filename=objectives_export.csv");
-    return res.status(200).send(csv);
+    return sendExportResponse(res, {
+      columns,
+      rows,
+      filename: `objectives-export-${formatDate(new Date())}`,
+      format,
+    });
   } catch (err) {
     return res.status(500).send({ success: false, message: err?.message || "Failed to export objectives" });
   }
 };
 
-// GET /exports/time-entries?companyId=...&start=YYYY-MM-DD&end=YYYY-MM-DD
+// GET /exports/time-entries?companyId=...&from=...&to=...&type=...&currentUserId=...
+// Delegates to time-tracking list logic via internal request forwarding pattern
 const exportTimeEntries = async (req, res) => {
   try {
-    const { companyId, start, end } = req.query;
+    const { getTimeTrackingsForExport } = require("../services/timeTrackingExport.service");
+    const { companyId, currentUserId, format } = req.query;
     if (!companyId) return badRequest(res, "companyId is required");
+    if (!currentUserId) return badRequest(res, "currentUserId is required");
 
-    const dateFilter = {};
-    if (start || end) {
-      // dateString is in M/D/YYYY format in many places, but timestamps exist as createdAt
-      // Use createdAt for robust filtering when provided
-      dateFilter.createdAt = {};
-      if (start) dateFilter.createdAt.$gte = new Date(start + "T00:00:00.000Z");
-      if (end) dateFilter.createdAt.$lte = new Date(end + "T23:59:59.999Z");
-    }
-
-    const entries = await TimeTracking.find({ companyId, ...dateFilter }).lean();
-    const userIds = Array.from(new Set(entries.map(e => (e.userId || "").toString()).filter(Boolean)));
-    const employees = await Employee.find({ _id: { $in: userIds } })
-      .select("_id personalInformation.firstName personalInformation.lastName contactInformation.email employmentInformation.employeeNumber employmentInformation.department")
-      .lean();
-    const employeeMap = new Map(employees.map(e => [e._id.toString(), e]));
+    const entries = await getTimeTrackingsForExport(req.query);
 
     const columns = [
       { key: "employeeNumber", label: "Employee Number" },
@@ -191,36 +299,30 @@ const exportTimeEntries = async (req, res) => {
       { key: "hours", label: "Hours" },
       { key: "method", label: "Method" },
       { key: "status", label: "Status" },
-      { key: "longitude", label: "Longitude" },
-      { key: "latitude", label: "Latitude" },
-      { key: "comments", label: "Comments" }
+      { key: "comments", label: "Comments" },
     ];
 
-    const rows = entries.map(en => {
-      const emp = employeeMap.get((en.userId || "").toString());
-      const fallbackName = `${en.employeeInfo?.name || ""}`.trim();
-      return {
-        employeeNumber: emp?.employmentInformation?.employeeNumber || "",
-        employeeName: (emp ? `${emp.personalInformation?.firstName || ""} ${emp.personalInformation?.lastName || ""}`.trim() : fallbackName) || "",
-        email: emp?.contactInformation?.email || en.employeeInfo?.email || "",
-        department: emp?.employmentInformation?.department || en.employeeInfo?.department || "",
-        date: en.dateString || "",
-        day: en.day || "",
-        timeIn: en.timeIn || "",
-        timeOut: en.timeOut || "",
-        hours: en.hours || "",
-        method: en.method || "",
-        status: en.status || "",
-        longitude: typeof en.longitude === "number" ? en.longitude : "",
-        latitude: typeof en.latitude === "number" ? en.latitude : "",
-        comments: en.comments || ""
-      };
-    });
+    const rows = entries.map((en) => ({
+      employeeNumber: en.employeeNumber || "",
+      employeeName: en.employeeName || "",
+      email: en.email || "",
+      department: en.department || "",
+      date: en.dateString || "",
+      day: en.day || "",
+      timeIn: en.timeIn || "",
+      timeOut: en.timeOut || "",
+      hours: en.hours || "",
+      method: en.method || "",
+      status: en.status || "",
+      comments: en.comments || "",
+    }));
 
-    const csv = toCsv(columns, rows);
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", "attachment; filename=time_entries_export.csv");
-    return res.status(200).send(csv);
+    return sendExportResponse(res, {
+      columns,
+      rows,
+      filename: `time-entries-export-${formatDate(new Date())}`,
+      format,
+    });
   } catch (err) {
     return res.status(500).send({ success: false, message: err?.message || "Failed to export time entries" });
   }
@@ -228,8 +330,8 @@ const exportTimeEntries = async (req, res) => {
 
 module.exports = {
   exportEmployees,
+  exportLeaves,
+  exportTasks,
   exportObjectives,
-  exportTimeEntries
+  exportTimeEntries,
 };
-
-
