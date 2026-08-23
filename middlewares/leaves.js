@@ -14,19 +14,7 @@ const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0
 const isMonthStart = (d) => d.getDate() === 1;
 const isHourStart = (d) => d.getMinutes() === 0 && d.getSeconds() === 0;
 
-const isFinancialYearStartForType = (now, leaveType) => {
-  try {
-    const co = leaveType?.carryOver || {};
-    const raw = co.carryOverDate;
-    if (raw && /^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-      const dt = new Date(raw);
-      return now.getMonth() === dt.getMonth() && now.getDate() === dt.getDate();
-    }
-    return now.getMonth() === 3 && now.getDate() === 1; // default: 1 Apr
-  } catch (e) {
-    return now.getMonth() === 3 && now.getDate() === 1;
-  }
-};
+const { isFinancialYearStartForType } = require("../utils/financialYear");
 
 const isEmployeeEligibleForLeaveType = async (employee, leaveType) => {
   const eligibilityId = (leaveType?.eligibilityId || '').toString();

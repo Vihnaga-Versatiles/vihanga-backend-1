@@ -26,7 +26,9 @@ const normalizeFormat = (format) => {
 };
 
 const sendExportResponse = (res, { columns, rows, filename, format }) => {
-  if (rows.length > MAX_EXPORT_ROWS) {
+  const safeRows = Array.isArray(rows) ? rows : [];
+
+  if (safeRows.length > MAX_EXPORT_ROWS) {
     return res.status(400).send({
       success: false,
       message: `Export exceeds maximum of ${MAX_EXPORT_ROWS} rows. Please narrow your filters.`,
@@ -37,22 +39,31 @@ const sendExportResponse = (res, { columns, rows, filename, format }) => {
   const baseName = filename || "export";
 
   if (normalized === "xlsx") {
-    const sheetRows = rows.map((row) => {
-      const obj = {};
-      columns.forEach((col) => {
-        obj[col.label] = typeof col.format === "function" ? col.format(row) : row[col.key];
-      });
-      return obj;
-    });
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(sheetRows);
+    let ws;
+
+    if (safeRows.length === 0) {
+      // Header-only sheet when no data matches filters
+      ws = XLSX.utils.aoa_to_sheet([columns.map((c) => c.label)]);
+    } else {
+      const sheetRows = safeRows.map((row) => {
+        const obj = {};
+        columns.forEach((col) => {
+          obj[col.label] = typeof col.format === "function" ? col.format(row) : row[col.key];
+        });
+        return obj;
+      });
+      ws = XLSX.utils.json_to_sheet(sheetRows);
+    }
+
+    XLSX.utils.book_append_sheet(wb, ws, "Export");
     const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", `attachment; filename="${baseName}.xlsx"`);
     return res.status(200).send(buffer);
   }
 
-  const csv = toCsv(columns, rows);
+  const csv = toCsv(columns, safeRows);
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="${baseName}.csv"`);
   return res.status(200).send(csv);

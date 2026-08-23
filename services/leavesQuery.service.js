@@ -99,8 +99,8 @@ const buildLeavesFilters = async (query) => {
         filters.empId = currentUserId;
       }
     }
-  } else if (normalizedType === "mycompany") {
-    // companyId scope only
+  } else if (normalizedType === "mycompany" || viewType === "all-leaves") {
+    // company-wide leaves scoped by companyId only
   } else {
     if (viewType === "pending-approvals" && currentUserId) {
       filters["currentApprovers.approverId"] = userObjectId;

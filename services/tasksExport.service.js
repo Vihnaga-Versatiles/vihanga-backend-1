@@ -71,9 +71,11 @@ const fetchAllTasksForExport = async ({ userId, companyId, type = "me", search =
     return [];
   }
 
+  const targetUserIdStrings = targetUserIds.map((id) => String(id));
+
   const mainTaskQuery = {
     companyId,
-    assignTo: { $in: targetUserIds },
+    assignTo: { $in: targetUserIdStrings },
     mainTask: { $in: ["", null] },
     userId: { $exists: true },
     ...searchQuery,
@@ -86,7 +88,7 @@ const fetchAllTasksForExport = async ({ userId, companyId, type = "me", search =
     mainTaskIds.length > 0
       ? await TasksModel.find({
           companyId,
-          assignTo: { $in: targetUserIds },
+          assignTo: { $in: targetUserIdStrings },
           mainTask: { $in: mainTaskIds },
           userId: { $exists: true },
         })
@@ -121,7 +123,7 @@ const fetchAllTasksForExport = async ({ userId, companyId, type = "me", search =
     });
 
     subTasks
-      .filter((st) => st.mainTask === task._id.toString())
+      .filter((st) => String(st.mainTask) === String(task._id))
       .forEach((sub) => {
         rows.push({
           type: "Sub Task",

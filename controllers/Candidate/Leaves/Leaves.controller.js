@@ -14,6 +14,7 @@ const mongoose = require("mongoose");
 const XLSX = require('xlsx');
 const jwt = require("jsonwebtoken");
 const { CLIENTURL, JWT_SECRET } = require("../../../config/environment");
+const { getFinancialYearBounds } = require("../../../utils/financialYear");
 
 const buildEmailLoginLink = ({ emailId, redirectPath }) => {
   const cleanEmail = (emailId || "").toString().replace(/[\r\n]/g, "").trim().toLowerCase();
@@ -387,64 +388,66 @@ const checkAdvanceDays = (leaveType, leaveDays, fromDate) => {
   };
 };
 
-const checkHalfDayLimits = async (leaveType, empId, companyId, isHalfDay) => {
+const checkHalfDayLimits = async (leaveType, empId, companyId, isHalfDay, fromDate, excludeLeaveId = null) => {
   console.log('INFO: Half-day validation check:', {
     isHalfDay,
     maxHalfDays: leaveType.maxHalfDays,
     leaveTypeName: leaveType.name,
     empId,
-    companyId
+    companyId,
+    fromDate,
+    excludeLeaveId,
   });
 
   if (!isHalfDay || !leaveType.maxHalfDays) {
     return { isValid: true, message: "No half-day restrictions" };
   }
 
-  // Get current year for filtering
-  const currentYear = new Date().getFullYear();
-  const yearStart = new Date(currentYear, 0, 1);
-  const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
+  const { start: fyStart, end: fyEnd, label: fyLabel } = getFinancialYearBounds(fromDate, leaveType);
 
-  // Count existing half-day leaves for this employee in current year
-  // Check both halfDay: true AND durationOfAbsence: "0.5" to catch any data inconsistencies
-  const existingHalfDayLeaves = await LeavesModel.find({
+  const halfDayQuery = {
     empId,
     companyId,
     absenceType: leaveType.name,
-    $or: [
-      { halfDay: true },
-      { durationOfAbsence: "0.5" }
-    ],
-    status: { $in: ['approved', 'pending'] }, // Count both approved and pending
-    from: { $gte: yearStart, $lte: yearEnd }
-  });
+    $or: [{ halfDay: true }, { durationOfAbsence: "0.5" }],
+    status: { $in: ["approved", "pending"] },
+    from: { $gte: fyStart, $lte: fyEnd },
+  };
+
+  if (excludeLeaveId) {
+    halfDayQuery._id = { $ne: excludeLeaveId };
+  }
+
+  const existingHalfDayLeaves = await LeavesModel.find(halfDayQuery);
 
   const usedHalfDays = existingHalfDayLeaves.length;
   const maxHalfDays = leaveType.maxHalfDays;
 
-  console.log('INFO: Half-day count details:', {
+  console.log("INFO: Half-day count details:", {
     usedHalfDays,
     maxHalfDays,
-    currentYear,
-    existingLeaves: existingHalfDayLeaves.map(leave => ({
+    financialYear: fyLabel,
+    fyStart,
+    fyEnd,
+    existingLeaves: existingHalfDayLeaves.map((leave) => ({
       id: leave._id,
       from: leave.from,
       status: leave.status,
       halfDay: leave.halfDay,
-      durationOfAbsence: leave.durationOfAbsence
-    }))
+      durationOfAbsence: leave.durationOfAbsence,
+    })),
   });
 
   if (usedHalfDays >= maxHalfDays) {
     return {
       isValid: false,
-      message: `Maximum half-day leaves limit reached. You have used ${usedHalfDays}/${maxHalfDays} half-day leaves for ${currentYear}.`
+      message: `Maximum half-day leaves limit reached. You have used ${usedHalfDays}/${maxHalfDays} half-day leaves for financial year ${fyLabel}.`,
     };
   }
 
   return {
     isValid: true,
-    message: `Half-day validation passed. Used ${usedHalfDays}/${maxHalfDays} half-day leaves for ${currentYear}.`
+    message: `Half-day validation passed. Used ${usedHalfDays}/${maxHalfDays} half-day leaves for financial year ${fyLabel}.`,
   };
 };
 
@@ -835,7 +838,7 @@ const createLeave = async (req, res) => {
 
       // Check half-day limits validation
       const isHalfDay = halfDay === 'true' || halfDay === true;
-      const halfDayValidation = await checkHalfDayLimits(leaveType, empId, companyId, isHalfDay);
+      const halfDayValidation = await checkHalfDayLimits(leaveType, empId, companyId, isHalfDay, fromDate);
       if (!halfDayValidation.isValid) {
         return errorResponse(res, halfDayValidation.message, 400);
       }
@@ -2053,7 +2056,14 @@ const updateLeave = async (req, res) => {
     }
 
     if (newTypeDoc && newTypeDoc.maxHalfDays) {
-      const halfDayValidation = await checkHalfDayLimits(newTypeDoc, empId, companyId, isHalfDayUpdate);
+      const halfDayValidation = await checkHalfDayLimits(
+        newTypeDoc,
+        empId,
+        companyId,
+        isHalfDayUpdate,
+        newFrom,
+        existingLeave._id
+      );
       if (!halfDayValidation.isValid) {
         return errorResponse(res, halfDayValidation.message, 400);
       }

@@ -2,10 +2,46 @@ const Employee = require("../models/employee.model");
 const Objectives = require("../models/objectives.model");
 const LeavesModel = require("../models/recruitment/Leaves/Leaves.model");
 const { buildLeavesFilters } = require("../services/leavesQuery.service");
-const { fetchAllTasksForExport } = require("../services/tasksExport.service");
+const { getAllTasks } = require("./tasks2.controller");
 const { sendExportResponse, formatDate } = require("../utils/exportHelper");
 
 const badRequest = (res, message) => res.status(400).send({ success: false, message });
+
+const cleanId = (value) => {
+  if (value == null) return "";
+  if (typeof value === "object") {
+    return String(value._id || value.id || "").trim();
+  }
+  return String(value).replace(/^"|"$/g, "").trim();
+};
+
+const flattenTasksToExportRows = (tasks) => {
+  const rows = [];
+
+  const walk = (items, level = 0) => {
+    (items || []).forEach((task) => {
+      rows.push({
+        type: level === 0 ? "Task" : "Sub Task",
+        title: task.title || "",
+        description: task.description || "",
+        progress: task.progressStatus ?? "",
+        status: task.status || "",
+        owner: task.owner || "",
+        assignee: task.employeeName || "",
+        dueDate: task.dueDate || "",
+        startDate: task.startDate || "",
+        priority: task.priority || "",
+        createdAt: task.createdAt || "",
+      });
+      if (Array.isArray(task.children) && task.children.length) {
+        walk(task.children, level + 1);
+      }
+    });
+  };
+
+  walk(tasks);
+  return rows;
+};
 
 // GET /exports/employees?companyId=...
 const exportEmployees = async (req, res) => {
@@ -73,11 +109,17 @@ const exportEmployees = async (req, res) => {
 // GET /exports/leaves?companyId=...&type=...&currentUserId=...&startDate=...&endDate=...
 const exportLeaves = async (req, res) => {
   try {
-    const { companyId, currentUserId, format } = req.query;
+    const companyId = cleanId(req.query.companyId);
+    const currentUserId = cleanId(req.query.currentUserId);
+    const { format } = req.query;
     if (!companyId) return badRequest(res, "companyId is required");
     if (!currentUserId) return badRequest(res, "currentUserId is required");
 
-    const { filters } = await buildLeavesFilters(req.query);
+    const { filters } = await buildLeavesFilters({
+      ...req.query,
+      companyId,
+      currentUserId,
+    });
     const leaves = await LeavesModel.find(filters).sort({ createdAt: -1 }).lean();
 
     const columns = [
@@ -123,11 +165,41 @@ const exportLeaves = async (req, res) => {
 // GET /exports/tasks/:userId/:companyId?type=...&search=...
 const exportTasks = async (req, res) => {
   try {
-    const { userId, companyId } = req.params;
+    const userId = cleanId(req.params.userId);
+    const companyId = cleanId(req.params.companyId);
     const { type, search, format } = req.query;
     if (!userId || !companyId) return badRequest(res, "userId and companyId are required");
 
-    const rows = await fetchAllTasksForExport({ userId, companyId, type, search });
+    let responseBody = null;
+    let statusCode = 200;
+    const mockRes = {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      send(body) {
+        responseBody = body;
+        return this;
+      },
+    };
+
+    await getAllTasks(
+      {
+        params: { userId, companyId },
+        query: { type, search, exportAll: "true" },
+      },
+      mockRes
+    );
+
+    if (statusCode !== 200 || responseBody?.success === false) {
+      return res.status(statusCode || 500).send({
+        success: false,
+        message: responseBody?.message || "Failed to fetch tasks for export",
+      });
+    }
+
+    const tasks = responseBody?.data || [];
+    const rows = flattenTasksToExportRows(tasks);
 
     const columns = [
       { key: "type", label: "Type" },
@@ -281,11 +353,17 @@ const exportObjectives = async (req, res) => {
 const exportTimeEntries = async (req, res) => {
   try {
     const { getTimeTrackingsForExport } = require("../services/timeTrackingExport.service");
-    const { companyId, currentUserId, format } = req.query;
+    const companyId = cleanId(req.query.companyId);
+    const currentUserId = cleanId(req.query.currentUserId);
+    const { format } = req.query;
     if (!companyId) return badRequest(res, "companyId is required");
     if (!currentUserId) return badRequest(res, "currentUserId is required");
 
-    const entries = await getTimeTrackingsForExport(req.query);
+    const entries = await getTimeTrackingsForExport({
+      ...req.query,
+      companyId,
+      currentUserId,
+    });
 
     const columns = [
       { key: "employeeNumber", label: "Employee Number" },
