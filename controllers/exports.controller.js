@@ -2,6 +2,11 @@ const Employee = require("../models/employee.model");
 const Objectives = require("../models/objectives.model");
 const LeavesModel = require("../models/recruitment/Leaves/Leaves.model");
 const { buildLeavesFilters } = require("../services/leavesQuery.service");
+const {
+  LEAVE_EXPORT_COLUMNS,
+  buildLeaveExportRows,
+  formatLeaveExportRows,
+} = require("../services/leavesExport.service");
 const { getAllTasks } = require("./tasks2.controller");
 const { sendExportResponse, formatDate } = require("../utils/exportHelper");
 
@@ -121,35 +126,18 @@ const exportLeaves = async (req, res) => {
       currentUserId,
     });
     const leaves = await LeavesModel.find(filters).sort({ createdAt: -1 }).lean();
+    const columns = LEAVE_EXPORT_COLUMNS;
+    const rows = await buildLeaveExportRows(leaves);
 
-    const columns = [
-      { key: "employeeId", label: "Employee ID" },
-      { key: "employeeName", label: "Employee Name" },
-      { key: "department", label: "Department" },
-      { key: "leaveType", label: "Leave Type" },
-      { key: "leaveFromDate", label: "Leave From Date", format: (r) => formatDate(r.leaveFromDate) },
-      { key: "leaveToDate", label: "Leave To Date", format: (r) => formatDate(r.leaveToDate) },
-      { key: "duration", label: "Duration" },
-      { key: "status", label: "Status" },
-      { key: "pendingWith", label: "Pending With" },
-      { key: "note", label: "Note" },
-    ];
-
-    const rows = leaves.map((leave) => ({
-      employeeId: leave.employeeInfo?.employeeNumber || leave.empId || "",
-      employeeName: leave.employeeInfo?.name || "",
-      department: leave.employeeInfo?.department || "",
-      leaveType: leave.absenceType || "",
-      leaveFromDate: leave.from,
-      leaveToDate: leave.to,
-      duration: leave.durationOfAbsence || "",
-      status: leave.status || "",
-      pendingWith:
-        leave.status === "pending" && Array.isArray(leave.currentApprovers) && leave.currentApprovers.length
-          ? leave.currentApprovers.map((a) => a.approverName || a.approverId).join(", ")
-          : "N/A",
-      note: leave.note || "",
-    }));
+    if ((format || "").toString().toLowerCase() === "json") {
+      return res.status(200).json({
+        success: true,
+        data: {
+          rows: formatLeaveExportRows(rows, columns),
+          total: rows.length,
+        },
+      });
+    }
 
     return sendExportResponse(res, {
       columns,
