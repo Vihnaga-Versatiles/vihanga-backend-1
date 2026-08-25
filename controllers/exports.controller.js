@@ -5,7 +5,6 @@ const { buildLeavesFilters } = require("../services/leavesQuery.service");
 const {
   LEAVE_EXPORT_COLUMNS,
   buildLeaveExportRows,
-  formatLeaveExportRows,
 } = require("../services/leavesExport.service");
 const { getAllTasks } = require("./tasks2.controller");
 const { sendExportResponse, formatDate } = require("../utils/exportHelper");
@@ -128,16 +127,6 @@ const exportLeaves = async (req, res) => {
     const leaves = await LeavesModel.find(filters).sort({ createdAt: -1 }).lean();
     const columns = LEAVE_EXPORT_COLUMNS;
     const rows = await buildLeaveExportRows(leaves);
-
-    if ((format || "").toString().toLowerCase() === "json") {
-      return res.status(200).json({
-        success: true,
-        data: {
-          rows: formatLeaveExportRows(rows, columns),
-          total: rows.length,
-        },
-      });
-    }
 
     return sendExportResponse(res, {
       columns,

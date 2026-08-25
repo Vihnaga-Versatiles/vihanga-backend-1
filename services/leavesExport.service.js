@@ -47,18 +47,7 @@ const buildLeaveExportRows = async (leaves) => {
   });
 };
 
-const formatLeaveExportRows = (rows, columns = LEAVE_EXPORT_COLUMNS) =>
-  (Array.isArray(rows) ? rows : []).map((row) => {
-    const formatted = {};
-    columns.forEach((col) => {
-      const value = typeof col.format === "function" ? col.format(row) : row[col.key];
-      formatted[col.label] = value === null || value === undefined || value === "" ? "N/A" : value;
-    });
-    return formatted;
-  });
-
 module.exports = {
   LEAVE_EXPORT_COLUMNS,
   buildLeaveExportRows,
-  formatLeaveExportRows,
 };
