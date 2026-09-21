@@ -11,7 +11,7 @@ const {
   getApprovalDashboard,
   debugPendingApprovals,
   testEmailTemplates,
- 
+  getLeavePolicy,
 } = require("../../../controllers/Candidate/Leaves/Leaves.controller");
 const multer = require('multer');
 const { bulkUploadLeaves, getLeavesByCompany, bulkExportBalances } = require("../../../controllers/Candidate/Leaves/BulkLeaves.controller");
@@ -40,6 +40,9 @@ router.get("/approval-dashboard", getApprovalDashboard);
 
 // Summary and reporting
 router.get("/summary", getSummary);
+
+// Private Leave Policy PDF (proxied from S3)
+router.get("/leave-policy", getLeavePolicy);
 
 // Bulk operations
 router.post("/bulk-upload/leave-type", bulkUploadLeaves);

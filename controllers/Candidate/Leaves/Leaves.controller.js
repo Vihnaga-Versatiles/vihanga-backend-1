@@ -1,4 +1,7 @@
-const { uploadFileToDrive } = require("../../../middlewares/recruitment/drive");
+const {
+  uploadFileToDrive,
+  getFileFromS3,
+} = require("../../../middlewares/recruitment/drive");
 const LeavesModel = require("../../../models/recruitment/Leaves/Leaves.model");
 const LeaveTypeModel = require("../../../models/recruitment/LeaveType/LeaveType");
 const EmployeeLeaveBalance = require("../../../models/recruitment/EmployeeLeaveBalance");
@@ -2646,6 +2649,55 @@ const debugWorkflowSelection = async (req, res) => {
 
 
 
+const getLeavePolicy = async (req, res) => {
+  try {
+    const leavePolicyRefs = [
+      process.env.LEAVE_POLICY_S3_KEY,
+      "LEAVE POLICY- 2026.pdf",
+      "LEAVE+POLICY-+2026.pdf",
+    ].filter(Boolean);
+
+    let s3Object;
+    let lastError;
+
+    for (const ref of leavePolicyRefs) {
+      try {
+        s3Object = await getFileFromS3(ref);
+        break;
+      } catch (error) {
+        lastError = error;
+        if (error?.code !== "NoSuchKey") {
+          throw error;
+        }
+      }
+    }
+
+    if (!s3Object) {
+      throw lastError || new Error("Leave policy file not found");
+    }
+
+    res.setHeader("Content-Type", s3Object.ContentType || "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      'inline; filename="LEAVE-POLICY-2026.pdf"'
+    );
+    if (s3Object.ContentLength) {
+      res.setHeader("Content-Length", s3Object.ContentLength);
+    }
+    res.setHeader("Cache-Control", "private, max-age=300");
+
+    return res.send(s3Object.Body);
+  } catch (error) {
+    console.error("Get Leave Policy Error:", error);
+    if (error?.code === "NoSuchKey") {
+      return errorResponse(res, { message: "Leave policy file not found" }, 404);
+    }
+    return errorResponse(res, {
+      message: error?.message || "Failed to load leave policy",
+    });
+  }
+};
+
 module.exports = {
   createLeave,
   getAllLeaves,
@@ -2659,6 +2711,6 @@ module.exports = {
   debugPendingApprovals,
   testEmailTemplates,
   debugWorkflowSelection,
-
+  getLeavePolicy,
 };
 
