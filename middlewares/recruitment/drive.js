@@ -39,10 +39,6 @@ const uploadFileToDrive = async (fileBuffer, fileName, mimeType, keyPrefix = "re
   }
 };
 
-module.exports = {
-  uploadFileToDrive,
-};
-
 // Delete object from S3 by key
 const deleteFileFromDrive = async (key) => {
   if (!key) return { success: false, message: 'No S3 key provided' };
@@ -59,4 +55,48 @@ const deleteFileFromDrive = async (key) => {
   }
 };
 
-module.exports.deleteFileFromDrive = deleteFileFromDrive;
+// Fetch Leave Policy PDF from private S3 (vihanga-files)
+const getLeavePolicyObject = async () => {
+  const bucket =
+    process.env.LEAVE_POLICY_S3_BUCKET ||
+    process.env.AWS_BUCKET_NAME ||
+    "vihanga-files";
+  const region =
+    process.env.LEAVE_POLICY_S3_REGION ||
+    process.env.AWS_REGION ||
+    "ap-south-1";
+  // Object key matches: .../LEAVE+POLICY-+2026.pdf
+  const key =
+    process.env.LEAVE_POLICY_S3_KEY || "LEAVE POLICY- 2026.pdf";
+
+  const leavePolicyS3 = new AWS.S3({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region,
+  });
+
+  const tryKeys = [key, "LEAVE+POLICY-+2026.pdf"];
+  let lastError;
+
+  for (const objectKey of tryKeys) {
+    try {
+      const s3Object = await leavePolicyS3
+        .getObject({ Bucket: bucket, Key: objectKey })
+        .promise();
+      return { s3Object, bucket, key: objectKey };
+    } catch (error) {
+      lastError = error;
+      if (error?.code !== "NoSuchKey") {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
+};
+
+module.exports = {
+  uploadFileToDrive,
+  deleteFileFromDrive,
+  getLeavePolicyObject,
+};

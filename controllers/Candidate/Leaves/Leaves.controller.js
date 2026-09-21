@@ -1,4 +1,7 @@
-const { uploadFileToDrive } = require("../../../middlewares/recruitment/drive");
+const {
+  uploadFileToDrive,
+  getLeavePolicyObject,
+} = require("../../../middlewares/recruitment/drive");
 const LeavesModel = require("../../../models/recruitment/Leaves/Leaves.model");
 const LeaveTypeModel = require("../../../models/recruitment/LeaveType/LeaveType");
 const EmployeeLeaveBalance = require("../../../models/recruitment/EmployeeLeaveBalance");
@@ -2828,6 +2831,32 @@ const debugWorkflowSelection = async (req, res) => {
 
 
 
+const getLeavePolicy = async (req, res) => {
+  try {
+    const { s3Object } = await getLeavePolicyObject();
+
+    res.setHeader("Content-Type", s3Object.ContentType || "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      'inline; filename="LEAVE-POLICY-2026.pdf"'
+    );
+    if (s3Object.ContentLength) {
+      res.setHeader("Content-Length", s3Object.ContentLength);
+    }
+    res.setHeader("Cache-Control", "private, max-age=300");
+
+    return res.send(s3Object.Body);
+  } catch (error) {
+    console.error("Get Leave Policy Error:", error);
+    if (error?.code === "NoSuchKey") {
+      return errorResponse(res, { message: "Leave policy file not found" }, 404);
+    }
+    return errorResponse(res, {
+      message: error?.message || "Failed to load leave policy",
+    });
+  }
+};
+
 module.exports = {
   createLeave,
   getAllLeaves,
@@ -2841,6 +2870,6 @@ module.exports = {
   debugPendingApprovals,
   testEmailTemplates,
   debugWorkflowSelection,
-
+  getLeavePolicy,
 };
 
