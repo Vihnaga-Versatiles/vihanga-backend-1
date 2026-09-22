@@ -1043,7 +1043,8 @@ function generateRandomNumber(n) {
 const forgotpassword = async (req, res) => {
   // #swagger.tags = ['Employee']
   try {
-    const { email } = req.body;
+    const { email, clientUrl } = req.body;
+    const resetBaseUrl = clientUrl || CLIENTURL;
 
     // Validate input
     if (!email) {
@@ -1097,7 +1098,7 @@ const forgotpassword = async (req, res) => {
             <p>Dear User,</p>
             <p>You have requested to reset your password. Please click the link below to proceed:</p>
             <p>
-              <a href="${CLIENTURL}/auth/resetpassword/${token}" 
+              <a href="${resetBaseUrl}/auth/resetpassword/${token}" 
                  style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
                 Reset Password
               </a>
